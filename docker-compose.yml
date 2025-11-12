@@ -34,6 +34,7 @@ services:
     networks:
       - proxmox_net
 
+
 networks:
   proxmox_net:
     driver: bridge
