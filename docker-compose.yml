@@ -10,7 +10,7 @@ services:
     volumes:
       - /home/github/data/vivaldi_bot.db:/app/core/vivaldi_bot.db
       - /home/github/log:/app/log
-      -
+
     environment:
       REDIS_HOST: ${REDIS_HOST}
       BOT_TOKEN: ${BOT_TOKEN}
