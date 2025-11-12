@@ -15,6 +15,7 @@ services:
       PVE_TOKEN: ${PVE_TOKEN}
       CF_TOKEN: ${CF_TOKEN}
       DOMAIN: ${DOMAIN}
+      ADMIN_IDS: ${ADMIN_IDS}
       DEFAULT_GW: ${DEFAULT_GW}
       DEFAULT_DNS: ${DEFAULT_DNS}
       IP_RANGE_START: ${IP_RANGE_START}
@@ -24,7 +25,6 @@ services:
       VPS_HOST: ${VPS_HOST}
       VPS_USER: ${VPS_USER}
       VPS_PASS: ${VPS_PASS}
-      ADMIN_IDS: ${ADMIN_IDS}
       DEBUG: ${DEBUG}
 
     volumes:
