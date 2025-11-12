@@ -7,6 +7,7 @@ from aiogram.types import Message
 
 async def delete_messages(bot: Bot, messages: Message | list[Message], delay: float = 2):
     """Удаляет пачку сообщений"""
+
     async def _del():
         await asyncio.sleep(delay)
         if not isinstance(messages, list):
@@ -25,6 +26,7 @@ async def delete_messages(bot: Bot, messages: Message | list[Message], delay: fl
 
 async def temporary_message(*, message: Message, text: str, kb=None, delay: float = 1.5):
     """Отправляет текст и удаляет его через delay"""
+
     async def _del():
         mess = await message.answer(text, reply_markup=kb)
         await asyncio.sleep(delay)

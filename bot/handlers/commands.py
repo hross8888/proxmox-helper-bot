@@ -1,11 +1,12 @@
 import html
+import io
 import json
 from pathlib import Path
 
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, FSInputFile
+from aiogram.types import Message, FSInputFile, BufferedInputFile
 
 from bot import i18n_default
 from bot.edit_db.states import DbStates
@@ -34,17 +35,26 @@ async def start(message: Message) -> None:
 @router.message(F.text, Command("get_db"))
 async def get_json(message: Message) -> None:
     vms = await Vm.all().values()
-    payload = html.escape(json.dumps(vms, ensure_ascii=False, default=str))
-    await message.answer(text=f"<code>{payload}</code>")
+    payload = json.dumps(vms, ensure_ascii=False, indent=2, default=str)
+
+    if len(payload) > 4000:
+        file_bytes = io.BytesIO(payload.encode("utf-8"))
+        file = BufferedInputFile(file_bytes.getvalue(), filename="vm_data.json")
+        await message.answer_document(document=file, caption="📄 Дамп таблицы Vm")
+    else:
+        escaped = html.escape(payload)
+        await message.answer(text=f"<code>{escaped}</code>")
 
 
 @router.message(Command("set_db"))
 async def cmd_set_db(message: Message, state: FSMContext):
-    await message.answer(i18n_default("M.DB.SET_DB_HELP"))
+    msg = await message.answer(i18n_default("M.DB.SET_DB_HELP"))
+    await state.update_data(delete_msg_id=msg.message_id)
     await state.set_state(DbStates.waiting_for_set_json)
 
 
 @router.message(Command("merge_db"))
 async def cmd_merge_db(message: Message, state: FSMContext):
-    await message.answer(i18n_default("M.DB.MERGE_DB_HELP"))
+    msg = await message.answer(i18n_default("M.DB.MERGE_DB_HELP"))
+    await state.update_data(delete_msg_id=msg.message_id)
     await state.set_state(DbStates.waiting_for_merge_json)
