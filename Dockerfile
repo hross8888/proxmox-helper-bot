@@ -1,5 +1,5 @@
 FROM python:3.12-slim
-RUN adduser --disabled-password --gecos '' --uid 1000 botuser
+RUN adduser --disabled-password --gecos '' --uid 1001 botuser
 
 WORKDIR /app
 COPY requirements.txt .
