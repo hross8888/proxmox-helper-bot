@@ -7,7 +7,10 @@ services:
     container_name: proxmox-helper-bot
     command: python main.py
     restart: always
-
+    volumes:
+      - /home/github/data/vivaldi_bot.db:/app/core/vivaldi_bot.db
+      - /home/github/log:/app/log
+      -
     environment:
       REDIS_HOST: ${REDIS_HOST}
       BOT_TOKEN: ${BOT_TOKEN}

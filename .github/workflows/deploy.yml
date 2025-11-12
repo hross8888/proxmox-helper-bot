@@ -38,6 +38,13 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Prepare persistent dirs
+        run: |
+          mkdir -p /home/github/data
+          mkdir -p /home/github/log
+          [ -f /home/github/data/vivaldi_bot.db ] || touch /home/github/data/vivaldi_bot.db
+          chown -R 1000:1000 /home/github/data /home/github/log || true
+
       - name: Sync code to $BOT_PATH
         run: |
           echo "[DEPLOY] Syncing code to $BOT_PATH..."

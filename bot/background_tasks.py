@@ -1,4 +1,6 @@
-from aiogram.types import Message, LinkPreviewOptions
+import io
+
+from aiogram.types import Message, LinkPreviewOptions, BufferedInputFile
 from loguru import logger
 
 from bot import i18n_default
@@ -103,10 +105,25 @@ async def background_set_config_nginx(*, vm: Vm, message: Message, config: str):
 async def background_get_config_nginx(*, vm: Vm, message: Message):
     manager = Manager(DOMAIN)
 
-    config = await manager.get_config_nginx(vm_ip=vm.ip_address, vm_user=DEFAULT_VM_USER, vm_pass=vm.password)
-    await message.answer(
-        f"<pre>{config}</pre>",
-        link_preview_options=LinkPreviewOptions(is_disabled=True),
-        reply_markup=close_kb()
+    config = await manager.get_config_nginx(
+        vm_ip=vm.ip_address,
+        vm_user=DEFAULT_VM_USER,
+        vm_pass=vm.password
     )
-    # logger.info(f"VM {vm.vm_id}. Конфиг установлен. Nginx перезапущен")
+
+    # Если конфиг короткий — отправляем текстом
+    if len(config) < 4000:
+        await message.answer(
+            f"<pre>{config}</pre>",
+            link_preview_options=LinkPreviewOptions(is_disabled=True),
+            reply_markup=close_kb()
+        )
+    else:
+        # Если длинный — отправляем файлом
+        file_bytes = io.BytesIO(config.encode("utf-8"))
+        file = BufferedInputFile(file_bytes.getvalue(), filename=f"{vm.name}_nginx.conf")
+        await message.answer_document(
+            document=file,
+            caption=f"📄 Конфиг Nginx для {vm.name}",
+            reply_markup=close_kb()
+        )
