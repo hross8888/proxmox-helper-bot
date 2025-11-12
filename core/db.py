@@ -51,16 +51,26 @@ async def set_banner_file_id(file_id):
 
 
 async def set_db(data: list[dict]):
-    """Полностью перезаписать таблицу Vm"""
+    """Полностью перезаписать таблицу Vm."""
     await Vm.all().delete()
+
     if data:
-        await Vm.bulk_create([Vm(**item) for item in data])
+        items = [Vm(**{k: v for k, v in item.items() if k != "id"}) for item in data]
+        await Vm.bulk_create(items)
+
     return len(data)
 
+
 async def merge_db(data: list[dict]):
-    """Добавить новые записи."""
+    """Добавить новые записи (только те, которых ещё нет)."""
     existing = {v["vm_id"] for v in await Vm.all().values("vm_id")}
-    new_items = [Vm(**item) for item in data if item["vm_id"] not in existing]
+    new_items = [
+        Vm(**{k: v for k, v in item.items() if k != "id"})
+        for item in data
+        if item["vm_id"] not in existing
+    ]
+
     if new_items:
         await Vm.bulk_create(new_items)
+
     return len(new_items)
