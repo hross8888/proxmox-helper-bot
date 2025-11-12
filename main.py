@@ -17,7 +17,7 @@ from bot.bot_loader import register_all_handlers
 
 
 async def on_startup():
-    setup_logger()
+    # setup_logger()
     await init_db()
     # await Vm.all().delete()
     register_all_handlers(DP)
