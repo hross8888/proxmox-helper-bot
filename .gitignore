@@ -1,0 +1,22 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.env/
+.venv/
+.env
+
+# IDE configs
+.vscode/
+.idea/
+
+# Databases
+*.db
+*.db-shm
+*.db-wal
+
+# Local helper files
+helper.txt

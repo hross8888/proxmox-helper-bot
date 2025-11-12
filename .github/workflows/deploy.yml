@@ -1,0 +1,55 @@
+name: Deploy Proxmox Helper Bot
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      PVE_HOST: ${{ secrets.PVE_HOST }}
+      PVE_PORT: ${{ secrets.PVE_PORT }}
+      PVE_NODE: ${{ secrets.PVE_NODE }}
+      PVE_TOKEN: ${{ secrets.PVE_TOKEN }}
+      CF_TOKEN: ${{ secrets.CF_TOKEN }}
+      DOMAIN: ${{ secrets.DOMAIN }}
+      DEFAULT_GW: ${{ vars.DEFAULT_GW }}
+      DEFAULT_DNS: ${{ vars.DEFAULT_DNS }}
+      IP_RANGE_START: ${{ vars.IP_RANGE_START }}
+      IP_RANGE_END: ${{ vars.IP_RANGE_END }}
+      DEFAULT_VM_USER: ${{ secrets.DEFAULT_VM_USER }}
+      BANNER_FILE_ID: ${{ vars.BANNER_FILE_ID }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PASS: ${{ secrets.VPS_PASS }}
+      DEBUG: ${{ vars.DEBUG }}
+      BOT_PATH: /home/github/mybot
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Sync code to $BOT_PATH
+        run: |
+          echo "[DEPLOY] Syncing code to $BOT_PATH..."
+          mkdir -p "$BOT_PATH"
+          rsync -a --delete ./ "$BOT_PATH"/
+
+      - name: Install dependencies
+        run: |
+          cd "$BOT_PATH"
+          python3.12 -m pip install --upgrade pip
+          python3.12 -m pip install -r requirements.txt --break-system-packages --quiet
+
+      - name: Restart bot
+        run: echo "[DEPLOY] Restarting bot..."
+             systemctl --user restart bot.service
