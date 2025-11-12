@@ -9,6 +9,7 @@ services:
     restart: always
 
     environment:
+      REDIS_HOST: ${REDIS_HOST}
       BOT_TOKEN: ${BOT_TOKEN}
       PVE_HOST: ${PVE_HOST}
       PVE_PORT: ${PVE_PORT}
