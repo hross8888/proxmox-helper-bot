@@ -47,7 +47,7 @@ async def set_banner_file_id(file_id):
     else:
         setting.banner_file_id = file_id
         await setting.save(update_fields=["banner_file_id"])
-    await redis_client.set("banner_file_id", setting.banner_file_id)
+    await redis_client.set("banner_file_id", file_id)
 
 
 async def set_db(data: list[dict]):
