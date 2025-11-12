@@ -43,7 +43,11 @@ jobs:
           echo "[DEPLOY] Syncing code to $BOT_PATH..."
           mkdir -p "$BOT_PATH"
           mkdir -p "$BOT_PATH/log"
-          rsync -a --delete ./ "$BOT_PATH"/
+          rsync -a --delete \
+            --exclude='__pycache__/' \
+            --exclude='*.pyc' \
+            --exclude='log/' \
+            ./ "$BOT_PATH"/
 
       - name: Build and restart Docker container
         run: |
