@@ -42,14 +42,28 @@ jobs:
         run: |
           echo "[DEPLOY] Syncing code to $BOT_PATH..."
           mkdir -p "$BOT_PATH"
+          mkdir -p "$BOT_PATH/log"
           rsync -a --delete ./ "$BOT_PATH"/
 
-      - name: Install dependencies
+      - name: Build and restart Docker container
         run: |
           cd "$BOT_PATH"
-          python3.12 -m pip install --upgrade pip
-          python3.12 -m pip install -r requirements.txt --break-system-packages --quiet
+          echo "[DEPLOY] Building and restarting Docker..."
+          docker compose down || true
+          docker compose up -d --build
 
-      - name: Restart bot
-        run: echo "[DEPLOY] Restarting bot..."
-             systemctl --user restart bot.service
+      - name: Verify bot container is running
+        run: |
+          echo "[CHECK] Active containers:"
+          docker ps --filter "name=proxmox-helper-bot" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+          echo
+          echo "[CHECK] Last 20 log lines from container:"
+          docker logs proxmox-helper-bot --tail 20 || (echo "[ERROR] Bot container not found or failed to start" && exit 1)
+          echo
+          echo "[CHECK] Host log directory contents:"
+          ls -lh "$BOT_PATH/log" || echo "[WARN] log dir empty"
+
+      - name: Clean up unused images
+        if: always()
+        run: |
+          docker image prune -af || true
