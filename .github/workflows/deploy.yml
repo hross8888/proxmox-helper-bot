@@ -30,7 +30,6 @@ jobs:
       VPS_HOST: ${{ secrets.VPS_HOST }}
       VPS_USER: ${{ secrets.VPS_USER }}
       VPS_PASS: ${{ secrets.VPS_PASS }}
-      DEBUG: ${{ vars.DEBUG }}
       BOT_PATH: /home/github/mybot
 
     steps:
