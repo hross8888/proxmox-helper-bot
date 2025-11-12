@@ -48,13 +48,11 @@ jobs:
 
       - name: Build and restart Docker container
         run: |
-          # Изменено: Переходим в корневой каталог бота $BOT_PATH
           cd "$BOT_PATH"
           echo "[DEPLOY] Files in $(pwd):"
           ls -la
-          # Используем 'docker compose' в корне
           docker compose down || true
-          docker compose up -d --build
+          docker compose up -d --build --force-recreate
 
       - name: Verify bot container is running
         run: |
