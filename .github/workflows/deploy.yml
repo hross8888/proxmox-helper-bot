@@ -20,6 +20,7 @@ jobs:
       PVE_TOKEN: ${{ secrets.PVE_TOKEN }}
       CF_TOKEN: ${{ secrets.CF_TOKEN }}
       DOMAIN: ${{ secrets.DOMAIN }}
+      ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
       DEFAULT_GW: ${{ vars.DEFAULT_GW }}
       DEFAULT_DNS: ${{ vars.DEFAULT_DNS }}
       IP_RANGE_START: ${{ vars.IP_RANGE_START }}
