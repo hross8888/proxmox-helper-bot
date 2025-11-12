@@ -1,8 +1,8 @@
 services:
   bot:
     build:
-      context: ..
-      dockerfile: ../Dockerfile
+      context: .
+      dockerfile: Dockerfile
     container_name: proxmox-helper-bot
     command: python main.py
     restart: always
@@ -28,7 +28,7 @@ services:
       DEBUG: ${DEBUG}
 
     volumes:
-      - ../:/app
+      - .:/app
       - /home/github/mybot/log:/app/log
     working_dir: /app
     networks:
