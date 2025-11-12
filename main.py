@@ -4,7 +4,7 @@ import contextlib
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from loguru import logger
 
-from bot import BOT, DP
+from bot import BOT, DP, setup_bot_commands
 from bot.middleware.check_user import CheckUser
 from bot.middleware.error import ErrorMiddleware
 from bot.middleware.logger import LoggingMiddleware
@@ -31,13 +31,6 @@ async def on_shutdown():
         await close_db()
         await proxmox.close()
 
-async def setup_bot_commands():
-    await BOT.set_my_commands(
-        [
-            BotCommand(command="start", description="Перезапустить бота"),
-        ],
-        scope=BotCommandScopeDefault()
-    )
 
 async def main():
     logger.info("Запуск Telegram-бота для управления Proxmox...")
