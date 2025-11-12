@@ -1,12 +1,10 @@
-version: "3.9"
-
 services:
   bot:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: ../Dockerfile
     container_name: proxmox-helper-bot
-    command: python -m bot
+    command: python main.py
     restart: always
 
     environment:
@@ -26,13 +24,13 @@ services:
       VPS_HOST: ${VPS_HOST}
       VPS_USER: ${VPS_USER}
       VPS_PASS: ${VPS_PASS}
+      ADMIN_IDS: ${ADMIN_IDS}
       DEBUG: ${DEBUG}
 
     volumes:
-      - .:/app                          # исходники
-      - /home/github/mybot/log:/app/log # логи видны снаружи
+      - ../:/app
+      - /home/github/mybot/log:/app/log
     working_dir: /app
-
     networks:
       - proxmox_net
 
