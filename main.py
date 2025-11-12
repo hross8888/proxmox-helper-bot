@@ -1,8 +1,7 @@
 import asyncio
 import contextlib
 
-from aiogram import F
-from aiogram.types import BotCommand, BotCommandScopeDefault, CallbackQuery
+from aiogram.types import BotCommand, BotCommandScopeDefault
 from loguru import logger
 
 from bot import BOT, DP
@@ -11,7 +10,6 @@ from bot.middleware.error import ErrorMiddleware
 from bot.middleware.logger import LoggingMiddleware
 from core.db import init_db, close_db
 from services.pve import proxmox
-from utils.logger import setup_logger
 
 from bot.bot_loader import register_all_handlers
 

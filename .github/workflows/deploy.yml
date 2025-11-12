@@ -26,7 +26,6 @@ jobs:
       IP_RANGE_START: ${{ vars.IP_RANGE_START }}
       IP_RANGE_END: ${{ vars.IP_RANGE_END }}
       DEFAULT_VM_USER: ${{ secrets.DEFAULT_VM_USER }}
-      BANNER_FILE_ID: ${{ vars.BANNER_FILE_ID }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
       VPS_USER: ${{ secrets.VPS_USER }}
       VPS_PASS: ${{ secrets.VPS_PASS }}

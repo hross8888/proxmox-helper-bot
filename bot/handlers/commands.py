@@ -1,15 +1,22 @@
-from aiogram import Router, F, Bot
+from pathlib import Path
+
+from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
 
 from bot import i18n_default
 from bot.keyboards.proxmox_kbs import main_proxmox_kb
-from core.settings import BANNER_FILE_ID
+from core.db import get_banner_file_id
 
 router = Router(name=__name__)
 
 
 @router.message(F.text, Command("start"))
 async def start(message: Message) -> None:
-    await message.answer_photo(BANNER_FILE_ID, caption=i18n_default('M.PVE.MAIN'), reply_markup=main_proxmox_kb())
+    banner = await get_banner_file_id()
+    if banner:
+        media = banner
+    else:
+        banner_path = Path(__file__).parent.parent / "media" / "banner.jpg"
+        media = FSInputFile(banner_path, "banner.jpg")
+    await message.answer_photo(media, caption=i18n_default('M.PVE.MAIN'), reply_markup=main_proxmox_kb())

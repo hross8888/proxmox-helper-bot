@@ -22,7 +22,6 @@ services:
       IP_RANGE_START: ${IP_RANGE_START}
       IP_RANGE_END: ${IP_RANGE_END}
       DEFAULT_VM_USER: ${DEFAULT_VM_USER}
-      BANNER_FILE_ID: ${BANNER_FILE_ID}
       VPS_HOST: ${VPS_HOST}
       VPS_USER: ${VPS_USER}
       VPS_PASS: ${VPS_PASS}
@@ -31,7 +30,26 @@ services:
     networks:
       - proxmox_net
 
+  redis:
+    image: redis:8.0-M03-alpine
+    logging:
+      driver: "json-file"
+      options:
+        tag: "{{.Name}}"
+    container_name: redis
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - proxmox_net
 
+volumes:
+  redis-data:
 networks:
   proxmox_net:
     driver: bridge

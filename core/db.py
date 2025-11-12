@@ -1,5 +1,8 @@
 from tortoise import Tortoise
 
+from core.models import Setting
+from core.redis import redis_client
+
 DB_PATH = "core/vivaldi_bot.db"  # или просто "bot.db" в корне проекта
 
 
@@ -25,3 +28,13 @@ async def init_db():
 async def close_db():
     """Закрытие подключения."""
     await Tortoise.close_connections()
+
+async def get_banner_file_id():
+    banner_file_id = await redis_client.get("banner_file_id")
+    if banner_file_id:
+        return banner_file_id
+
+    setting = await Setting.all().first()
+    if setting and setting.banner_file_id:
+        await redis_client.set("banner_file_id", setting.banner_file_id)
+        return setting.banner_file_id

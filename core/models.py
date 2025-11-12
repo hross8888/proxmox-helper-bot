@@ -1,6 +1,8 @@
 from tortoise import fields
 from tortoise.models import Model
 
+class Setting(Model):
+    banner_file_id = fields.CharField(max_length=255)
 
 class Vm(Model):
     id = fields.IntField(pk=True)
