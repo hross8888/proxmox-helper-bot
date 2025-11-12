@@ -43,7 +43,7 @@ async def get_json(message: Message) -> None:
         await message.answer_document(document=file, caption="📄 Дамп таблицы Vm")
     else:
         escaped = html.escape(payload)
-        await message.answer(text=f"<code>{escaped}</code>")
+        await message.answer(text=f"<pre>{escaped}</pre>")
 
 
 @router.message(Command("set_db"))

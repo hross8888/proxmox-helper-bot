@@ -114,7 +114,7 @@ async def background_get_config_nginx(*, vm: Vm, message: Message):
     # Если конфиг короткий — отправляем текстом
     if len(config) < 4000:
         await message.answer(
-            f"<pre language=\"json\">{config}</pre>",
+            f"<pre>{config}</pre>",
             link_preview_options=LinkPreviewOptions(is_disabled=True),
             reply_markup=close_kb()
         )
