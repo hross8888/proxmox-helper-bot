@@ -27,6 +27,9 @@ services:
       VPS_USER: ${VPS_USER}
       VPS_PASS: ${VPS_PASS}
 
+    volumes:
+      - .:/app
+      - /home/github/mybot/log:/app/log
     working_dir: /app
     networks:
       - proxmox_net

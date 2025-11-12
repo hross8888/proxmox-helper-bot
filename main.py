@@ -46,8 +46,6 @@ async def main():
     DP.startup.register(on_startup)
     DP.shutdown.register(on_shutdown)
 
-
-
     try:
         await setup_bot_commands()
         await DP.start_polling(BOT)
