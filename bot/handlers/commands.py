@@ -31,7 +31,7 @@ async def start(message: Message) -> None:
         await set_banner_file_id(file_id)
 
 
-@router.message(F.text, Command("get_json"))
+@router.message(F.text, Command("get_db"))
 async def get_json(message: Message) -> None:
     vms = await Vm.all().values()
     payload = html.escape(json.dumps(vms, ensure_ascii=False, default=str))

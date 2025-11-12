@@ -20,6 +20,15 @@ class Manager:
         self.nginx = nginx_manager
         self.domain = domain
 
+    async def start_vm(self, *, vmid: int):
+        await self.proxmox.start_vm(vmid=vmid)
+
+    async def stop_vm(self, *, vmid: int):
+        await self.proxmox.stop_vm(vmid=vmid)
+
+    async def reboot_vm(self, *, vmid: int):
+        await self.proxmox.reboot_vm(vmid=vmid)
+
     async def create_vm(self, *, data: CreateVmShema, ciuser) -> tuple[str, int]:
         """Создает VM"""
         ip = await get_free_ip()
@@ -77,3 +86,12 @@ class Manager:
             logger.error(f"Ошибка при удалении VM {vmid}: {e}")
 
         await Vm.filter(vm_id=vmid).delete()
+
+    async def reload_nginx(self, *, vm_ip: str, vm_user: str, vm_pass: str):
+        await self.nginx.reload(vm_ip=vm_ip, vm_user=vm_user, vm_pass=vm_pass)
+
+    async def set_config_nginx(self, *, vm_ip: str, vm_user: str, vm_pass: str, config: str):
+        await self.nginx.set_config(vm_ip=vm_ip, vm_user=vm_user, vm_pass=vm_pass, config=config)
+
+    async def get_config_nginx(self, *, vm_ip: str, vm_user: str, vm_pass: str) -> str:
+        return await self.nginx.get_config(vm_ip=vm_ip, vm_user=vm_user, vm_pass=vm_pass)

@@ -98,8 +98,9 @@ async def render_step(event: CallbackQuery | Message, state: FSMContext):
         vms.sort(key=lambda t: t.vmid, reverse=True)
         markup = vm_list_kb(vms)
 
-    elif current == PveEditStates.target_vm.state:
-        vm_id=data.get("target_vm_id")
+
+    elif current in [PveEditStates.target_vm.state, PveEditStates.nginx_conf.state]:
+        vm_id = data.get("target_vm_id")
         vm_info = await proxmox.vm_info(data.get("target_vm_id"))
         db_vm = await Vm.get_or_none(vm_id=vm_id)
         ip_addresses = db_vm.ip_address if db_vm else "<b>NOT IN DB</b>"
@@ -120,7 +121,8 @@ async def render_step(event: CallbackQuery | Message, state: FSMContext):
             password=password,
 
         )
-        markup = vm_edit_kb(vm_info)
+        markup = vm_edit_kb(vm_info) if current == PveEditStates.target_vm.state else vm_nginx_kb(db_vm)
+
 
     else:
         raise ValueError("[render_step] invalid state")
@@ -201,3 +203,4 @@ async def prev_step(state: FSMContext):
             await state.set_state(steps[idx - 1])
     except ValueError:
         pass
+

@@ -15,3 +15,4 @@ class PveEditStates(StatesGroup):
     main = State()
     vm_list = State()
     target_vm = State()
+    nginx_conf = State()

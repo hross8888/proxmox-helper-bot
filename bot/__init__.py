@@ -28,6 +28,7 @@ async def setup_bot_commands():
         [
             BotCommand(command="start", description=i18n_default("CMD.RESTART")),
             BotCommand(command="set_db", description=i18n_default("CMD.SET_DB")),
+            BotCommand(command="get_db", description=i18n_default("CMD.GET_DB")),
             BotCommand(command="merge_db", description=i18n_default("CMD.MERGE_DB")),
         ],
         scope=BotCommandScopeDefault()

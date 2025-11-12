@@ -1,4 +1,4 @@
-from aiogram.types import Message
+from aiogram.types import Message, LinkPreviewOptions
 from loguru import logger
 
 from bot import i18n_default
@@ -69,3 +69,44 @@ async def background_delete_vm(*, vm: Vm, message: Message):
         await temporary_message(message=message, text=i18n_default("M.PVE.ERROR.VM_DELETE").format(vm_id=vm.vm_id))
         logger.exception(f"Ошибка при удалении VM {vm.vm_id}: {e}")
         raise
+
+async def background_reload_nginx(*, vm: Vm, message: Message):
+    manager = Manager(DOMAIN)
+    await manager.reload_nginx(vm_ip=vm.ip_address, vm_user=DEFAULT_VM_USER, vm_pass=vm.password)
+    await temporary_message(message=message, text=i18n_default("M.PVE.VM_NGINX_RELOADED").format(vm_id=vm.vm_id))
+    logger.info(f"VM {vm.vm_id}. Nginx перезапущен")
+
+async def background_set_config_nginx(*, vm: Vm, message: Message, config: str):
+    manager = Manager(DOMAIN)
+    try:
+        await manager.set_config_nginx(vm_ip=vm.ip_address, vm_user=DEFAULT_VM_USER, vm_pass=vm.password, config=config)
+
+    except RuntimeError:
+        logger.error(f"VM {vm.vm_id}. Конфиг НЕ установлен. {vm.vm_id=}")
+        await message.answer(
+            i18n_default("M.PVE.ERROR.NGINX_CONFIG_INVALID").format(vm_id=vm.vm_id),
+            reply_markup=close_kb()
+        )
+
+    except Exception as e:
+        logger.error(f"VM {vm.vm_id}. Конфиг НЕ установлен. {vm.vm_id=}")
+        await message.answer(
+            i18n_default("M.PVE.ERROR.NGINX_SET_CONFIG_ERROR").format(vm_id=vm.vm_id, error=repr(e)),
+            reply_markup=close_kb()
+        )
+    else:
+        msg_text = i18n_default("M.PVE.VM_NGINX_RELOADED").format(vm_id=vm.vm_id)
+        logger.info(f"VM {vm.vm_id}. Конфиг установлен. Nginx перезапущен. {vm.vm_id=}")
+        await temporary_message(message=message, text=msg_text)
+
+
+async def background_get_config_nginx(*, vm: Vm, message: Message):
+    manager = Manager(DOMAIN)
+
+    config = await manager.get_config_nginx(vm_ip=vm.ip_address, vm_user=DEFAULT_VM_USER, vm_pass=vm.password)
+    await message.answer(
+        f"<pre>{config}</pre>",
+        link_preview_options=LinkPreviewOptions(is_disabled=True),
+        reply_markup=close_kb()
+    )
+    # logger.info(f"VM {vm.vm_id}. Конфиг установлен. Nginx перезапущен")

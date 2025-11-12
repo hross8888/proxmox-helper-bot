@@ -33,6 +33,9 @@ class PveEditVmCallback(CallbackData, prefix="pve7"):
     vm_id: int
     action: PveEditVmCallbackAction
 
+class PveNginxCallback(CallbackData, prefix="pve8"):
+    vm_id: int
+    action: PveNginxCallbackAction
 
 class BackCallback(CallbackData, prefix="cmn1"):
     pass

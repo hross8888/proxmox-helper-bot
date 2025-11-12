@@ -3,6 +3,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from bot.keyboards.callbacks import *
 from bot.keyboards.types import *
 from bot.keyboards.utils import arrange_keyboard
+from core.models import Vm
 from services.pve.shema import VmInfo, VmStatus
 
 
@@ -74,7 +75,7 @@ def vm_list_kb(vms: list[VmInfo], rows=2):
         label = "▫️" if vm.status == VmStatus.running else "▪️"
         # invisible_needed = min(14, max(0, max_len - len(vm.name)))
         builder.button(
-            text=f"{label}     {vm.name}",
+            text=f"{label}     {vm.name} ({vm.vmid})",
             callback_data=PveListVmCallback(vm_id=vm.vmid, vm_name=vm.name)
         )
 
@@ -129,9 +130,19 @@ def vm_edit_kb(vm: VmInfo):
     builder = InlineKeyboardBuilder()
     if vm.status == VmStatus.running:
         builder.button(
+            text="Nginx", callback_data=PveEditVmCallback(vm_id=vm.vmid, action=PveEditVmCallbackAction.nginx)
+        )
+        builder.button(
             text="🌀 Перезапустить",
             callback_data=PveEditVmCallback(vm_id=vm.vmid, action=PveEditVmCallbackAction.reboot)
         )
+        # builder.button(
+        #     text="📃 Установить конфиг Nginx", callback_data=PveEditVmCallback(vm_id=vm.vmid, action=PveEditVmCallbackAction.set_conf_nginx)
+        # )
+        # builder.button(
+        #     text="♻️ Перезапустить Nginx",
+        #     callback_data=PveEditVmCallback(vm_id=vm.vmid, action=PveEditVmCallbackAction.reload_nginx)
+        # )
         builder.button(
             text="🔅 Выключить", callback_data=PveEditVmCallback(vm_id=vm.vmid, action=PveEditVmCallbackAction.off)
         )
@@ -139,13 +150,43 @@ def vm_edit_kb(vm: VmInfo):
         builder.button(
             text="🔆 Включить", callback_data=PveEditVmCallback(vm_id=vm.vmid, action=PveEditVmCallbackAction.on)
         )
-    builder.button(
-        text="🌐 Создать домен",
-        callback_data=PveEditVmCallback(vm_id=vm.vmid, action=PveEditVmCallbackAction.create_domain)
-    )
+    # builder.button(
+    #     text="🌐 Создать домен",
+    #     callback_data=PveEditVmCallback(vm_id=vm.vmid, action=PveEditVmCallbackAction.create_domain)
+    # )
     builder.button(
         text="⛔️ Удалить VM", callback_data=PveEditVmCallback(vm_id=vm.vmid, action=PveEditVmCallbackAction.delete)
     )
+    builder.button(text="Назад", callback_data=BackCallback())
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+
+def vm_nginx_kb(db_vm: Vm):
+    builder = InlineKeyboardBuilder()
+    if not db_vm.domain:
+        builder.button(
+            text="🌐 Создать домен",
+            callback_data=PveNginxCallback(vm_id=db_vm.vm_id, action=PveNginxCallbackAction.create_domain)
+        )
+    else:
+        builder.button(
+            text="✂️ Удалить домен",
+            callback_data=PveNginxCallback(vm_id=db_vm.vm_id, action=PveNginxCallbackAction.delete_domain)
+        )
+        builder.button(
+            text="📤 Прочитать конфиг",
+            callback_data=PveNginxCallback(vm_id=db_vm.vm_id, action=PveNginxCallbackAction.get_conf_nginx)
+        )
+        builder.button(
+            text="📥 Установить конфиг",
+            callback_data=PveNginxCallback(vm_id=db_vm.vm_id, action=PveNginxCallbackAction.set_conf_nginx)
+        )
+        builder.button(
+            text="♻️ Перезапустить Nginx",
+            callback_data=PveNginxCallback(vm_id=db_vm.vm_id, action=PveNginxCallbackAction.reload_nginx)
+        )
     builder.button(text="Назад", callback_data=BackCallback())
     builder.adjust(1)
     return builder.as_markup()

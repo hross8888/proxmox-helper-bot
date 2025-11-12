@@ -6,7 +6,8 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 
 from bot import i18n_default
-from bot.background_tasks import background_delete_vm, background_create_domain, background_create_vm
+from bot.background_tasks import background_delete_vm, background_create_domain, background_create_vm, \
+    background_reload_nginx, background_set_config_nginx, background_get_config_nginx
 from bot.handlers.common import handle_step
 from bot.keyboards.callbacks import *
 from bot.keyboards.types import *
@@ -15,6 +16,8 @@ from bot.pve.states import *
 from bot.shema import CreateVmShema
 from bot.utils.message_helper import delete_messages, temporary_message
 from core.models import Vm
+from core.settings import DOMAIN
+from services.manager import Manager
 
 router = Router(name=__name__)
 
@@ -105,22 +108,27 @@ async def pve_disk_kb_handler(query: CallbackQuery, callback_data: PveListVmCall
 
 @router.callback_query(PveEditVmCallback.filter())
 async def pve_edit_vn_handler(query: CallbackQuery, callback_data: PveEditVmCallback, state: FSMContext):
-    if callback_data.action == PveEditVmCallbackAction.create_domain:
-        await state.update_data(target_vm_id=callback_data.vm_id)  # вдруг потеряли
-        vm = await Vm.get_or_none(vm_id=callback_data.vm_id)
-        if not vm:
-            await query.answer(
-                i18n_default("M.PVE.ERROR.VM_NOT_FOUND").format(vm_id=callback_data.vm_id),
-                show_alert=True
-            )
-            return
-
-        await query.answer(i18n_default("M.PVE.CREATING_DOMAIN"))
-
-        create_task(background_create_domain(vm=vm, message=query.message))
-
-        await state.set_state(PveEditStates.main)
+    if callback_data.action == PveEditVmCallbackAction.on:
+        manager = Manager(DOMAIN)
+        await manager.start_vm(vmid=callback_data.vm_id)
+        await query.answer(i18n_default("M.PVE.VM_POWER_ON"))
         await render_step(query, state)
+
+    elif callback_data.action == PveEditVmCallbackAction.off:
+        manager = Manager(DOMAIN)
+        await manager.stop_vm(vmid=callback_data.vm_id)
+        await query.answer(i18n_default("M.PVE.VM_POWER_OFF"))
+        await render_step(query, state)
+
+    elif callback_data.action == PveEditVmCallbackAction.reboot:
+        manager = Manager(DOMAIN)
+        await manager.reboot_vm(vmid=callback_data.vm_id)
+        await query.answer(i18n_default("M.PVE.VM_REBOOT"))
+        await render_step(query, state)
+
+    elif callback_data.action == PveEditVmCallbackAction.nginx:
+        await handle_step(query, state)
+
 
     elif callback_data.action == PveEditVmCallbackAction.delete:
         vm = await Vm.get_or_none(vm_id=callback_data.vm_id)
@@ -137,3 +145,68 @@ async def pve_edit_vn_handler(query: CallbackQuery, callback_data: PveEditVmCall
 
         await state.set_state(PveEditStates.main)
         await render_step(query, state)
+
+@router.callback_query(PveNginxCallback.filter())
+async def pve_edit_nginx_handler(query: CallbackQuery, callback_data: PveNginxCallback, state: FSMContext):
+    if callback_data.action == PveNginxCallbackAction.create_domain:
+        await state.update_data(target_vm_id=callback_data.vm_id)  # вдруг потеряли
+        vm = await Vm.get_or_none(vm_id=callback_data.vm_id)
+        if not vm:
+            await query.answer(
+                i18n_default("M.PVE.ERROR.VM_NOT_FOUND").format(vm_id=callback_data.vm_id),
+                show_alert=True
+            )
+            return
+
+        await query.answer(i18n_default("M.PVE.CREATING_DOMAIN"))
+
+        create_task(background_create_domain(vm=vm, message=query.message))
+
+        await state.set_state(PveEditStates.main)
+        await render_step(query, state)
+
+    elif callback_data.action == PveNginxCallbackAction.delete_domain:
+        await query.answer("Not Implemented", show_alert=True)
+
+    elif callback_data.action == PveNginxCallbackAction.reload_nginx:
+        vm = await Vm.get_or_none(vm_id=callback_data.vm_id)
+        if not vm:
+            await query.answer(
+                i18n_default("M.PVE.ERROR.VM_NOT_FOUND").format(vm_id=callback_data.vm_id),
+                show_alert=True
+            )
+            return
+        create_task(background_reload_nginx(vm=vm, message=query.message))
+        await query.answer(i18n_default("M.PVE.VM_NGINX_WAIT_RELOAD"))
+
+    elif callback_data.action == PveNginxCallbackAction.set_conf_nginx:
+        await state.update_data(vm_id=callback_data.vm_id)
+        await state.set_state(PveEditStates.nginx_conf)
+        await query.answer(i18n_default("M.PVE.VM_NGINX_INPUT_CONFIG"), show_alert=True)
+
+    elif callback_data.action == PveNginxCallbackAction.get_conf_nginx:
+        await query.answer(i18n_default("M.PVE.VM_NGINX_WAIT_CONFIG"))
+        vm = await Vm.get_or_none(vm_id=callback_data.vm_id)
+        if not vm:
+            await query.answer(
+                i18n_default("M.PVE.ERROR.VM_NOT_FOUND").format(vm_id=callback_data.vm_id),
+                show_alert=True
+            )
+            return
+        create_task(background_get_config_nginx(vm=vm, message=query.message))
+
+
+@router.message(F.text, PveEditStates.nginx_conf)
+async def input_nginx_conf_handler(message: Message, bot: Bot, state: FSMContext):
+    data = await state.get_data()
+    vm_id = data.get("vm_id")
+
+    vm = await Vm.get_or_none(vm_id=vm_id)
+    if not vm:
+        await temporary_message(message=message, text=i18n_default("M.PVE.ERROR.VM_NOT_FOUND").format(vm_id=vm_id))
+        return
+
+    await delete_messages(bot, message, 0)
+    await temporary_message(message=message, text=i18n_default("M.PVE.VM_NGINX_WAIT_SET_CONFIG"))
+    create_task(background_set_config_nginx(vm=vm, message=message, config=message.text))
+    await state.clear()
