@@ -2,21 +2,23 @@ import os
 from dotenv import load_dotenv
 from typing import List, Optional
 
+from loguru import logger
+
 load_dotenv()
 
 
 def read_secret_file(key: str) -> str | None:
     secret_path = os.path.join("/run/secrets", key)
-
+    logger.info(f"load var: {key}")
     if os.path.exists(secret_path):
-        print(f"DEBUG: Secret file found at {secret_path}")
+        logger.info(f"Secret file found at {secret_path}")
         try:
             with open(secret_path, 'r') as f:
                 return f.read().strip()
         except Exception as e:
-            print(f"DEBUG: Error reading secret {key}: {e}")
+            logger.info(f"Error reading secret {key}: {e}")
             return None
-    print(f"DEBUG: Secret file NOT found at {secret_path}")
+    logger.info(f"Secret file NOT found at {secret_path}")
     return None
 
 REDIS_HOST: Optional[str] = read_secret_file("REDIS_HOST") or os.getenv("REDIS_HOST")
