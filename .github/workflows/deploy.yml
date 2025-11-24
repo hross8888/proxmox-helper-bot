@@ -51,7 +51,6 @@ jobs:
             echo -n "$value" | docker secret create "$name" -
           }
 
-#          update_secret REDIS_HOST      "${{ secrets.REDIS_HOST }}"
           update_secret REDIS_HOST      "proxmoxbot_redis"
           update_secret BOT_TOKEN       "${{ secrets.BOT_TOKEN }}"
           update_secret PVE_HOST        "${{ secrets.PVE_HOST }}"
