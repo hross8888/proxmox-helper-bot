@@ -8,48 +8,17 @@ jobs:
   deploy:
     runs-on: self-hosted
 
-    defaults:
-      run:
-        shell: bash
-
-    env:
-      REDIS_HOST: ${{ secrets.REDIS_HOST }}
-      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-      PVE_HOST: ${{ secrets.PVE_HOST }}
-      PVE_PORT: ${{ secrets.PVE_PORT }}
-      PVE_NODE: ${{ secrets.PVE_NODE }}
-      PVE_TOKEN: ${{ secrets.PVE_TOKEN }}
-      CF_TOKEN: ${{ secrets.CF_TOKEN }}
-      DOMAIN: ${{ secrets.DOMAIN }}
-      ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
-      DEFAULT_GW: ${{ vars.DEFAULT_GW }}
-      DEFAULT_DNS: ${{ vars.DEFAULT_DNS }}
-      IP_RANGE_START: ${{ vars.IP_RANGE_START }}
-      IP_RANGE_END: ${{ vars.IP_RANGE_END }}
-      DEFAULT_VM_USER: ${{ secrets.DEFAULT_VM_USER }}
-      VPS_HOST: ${{ secrets.VPS_HOST }}
-      VPS_USER: ${{ secrets.VPS_USER }}
-      VPS_PASS: ${{ secrets.VPS_PASS }}
-      BOT_PATH: /home/github/mybot
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
-      - name: Prepare persistent dirs
+      - name: Define paths
         run: |
-          mkdir -p /home/github/data
-          mkdir -p /home/github/log
-          [ -f /home/github/data/vivaldi_bot.db ] || touch /home/github/data/vivaldi_bot.db
-          chown -R 1000:1000 /home/github/data /home/github/log || true
+          export BOT_PATH=/home/github/mybot
+          echo "BOT_PATH=$BOT_PATH" >> $GITHUB_ENV
 
-      - name: Sync code to $BOT_PATH
+      - name: Sync code to server
         run: |
-          echo "[DEPLOY] Syncing code to $BOT_PATH..."
-          mkdir -p "$BOT_PATH"
-          mkdir -p "$BOT_PATH/log"
           rsync -a --delete \
             --exclude='__pycache__/' \
             --exclude='*.pyc' \
@@ -57,27 +26,60 @@ jobs:
             --exclude='*.db' \
             ./ "$BOT_PATH"/
 
-      - name: Build and restart Docker container
+      ######################################################################
+      # (1) ОБНОВЛЕНИЕ Docker Swarm Secrets из GitHub Secrets
+      ######################################################################
+      - name: Update Swarm secrets
         run: |
-          cd "$BOT_PATH"
-          echo "[DEPLOY] Files in $(pwd):"
-          ls -la
-          docker compose down || true
-          docker compose build --no-cache
-          docker compose up -d --force-recreate
+          update_secret() {
+            name="$1"
+            value="$2"
+            echo "[SWARM] Updating secret: $name"
+            docker secret rm "$name" 2>/dev/null || true
+            echo -n "$value" | docker secret create "$name" -
+          }
 
-      - name: Verify bot container is running
+          update_secret REDIS_HOST      "${{ secrets.REDIS_HOST }}"
+          update_secret BOT_TOKEN       "${{ secrets.BOT_TOKEN }}"
+          update_secret PVE_HOST        "${{ secrets.PVE_HOST }}"
+          update_secret PVE_PORT        "${{ secrets.PVE_PORT }}"
+          update_secret PVE_NODE        "${{ secrets.PVE_NODE }}"
+          update_secret PVE_TOKEN       "${{ secrets.PVE_TOKEN }}"
+          update_secret CF_TOKEN        "${{ secrets.CF_TOKEN }}"
+          update_secret DOMAIN          "${{ secrets.DOMAIN }}"
+          update_secret ADMIN_IDS       "${{ secrets.ADMIN_IDS }}"
+          update_secret DEFAULT_VM_USER "${{ secrets.DEFAULT_VM_USER }}"
+          update_secret VPS_HOST        "${{ secrets.VPS_HOST }}"
+          update_secret VPS_USER        "${{ secrets.VPS_USER }}"
+          update_secret VPS_PASS        "${{ secrets.VPS_PASS }}"
+
+          # vars
+          update_secret DEFAULT_GW      "${{ vars.DEFAULT_GW }}"
+          update_secret DEFAULT_DNS     "${{ vars.DEFAULT_DNS }}"
+          update_secret IP_RANGE_START  "${{ vars.IP_RANGE_START }}"
+          update_secret IP_RANGE_END    "${{ vars.IP_RANGE_END }}"
+
+      ######################################################################
+      # (2) ДЕПЛОЙ стекa через docker stack
+      ######################################################################
+      - name: Deploy SWARM stack
         run: |
-          echo "[CHECK] Active containers:"
-          docker ps --filter "name=proxmox-helper-bot" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-          echo
-          echo "[CHECK] Last 20 log lines from container:"
-          docker logs proxmox-helper-bot --tail 20 || (echo "[ERROR] Bot container not found or failed to start" && exit 1)
-          echo
-          echo "[CHECK] Host log directory contents:"
-          ls -lh "$BOT_PATH/log" || echo "[WARN] log dir empty"
+          docker stack deploy -c "$BOT_PATH/stack.yml" proxmoxbot
 
-      - name: Clean up unused images
+      ######################################################################
+      # (3) ПРОВЕРКА, что сервис запущен
+      ######################################################################
+      - name: Verify service is running
+        run: |
+          echo "[CHECK] Services:"
+          docker service ls
+          echo
+          echo "[CHECK] Logs:"
+          docker service logs proxmoxbot_proxmox-helper-bot --tail 50 || true
+
+      ######################################################################
+      # (4) Очистка старых образов
+      ######################################################################
+      - name: Cleanup images
         if: always()
-        run: |
-          docker image prune -af || true
+        run: docker image prune -af || true

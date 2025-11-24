@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  bot:
+    image: proxmox-helper-bot:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: proxmox-helper-bot
+    command: python main.py
+    # Секция deploy: обеспечивает управление сервисом в Swarm Mode
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+    # Большинство переменных перемещено в secrets для безопасности.
+    # Ваш Python-код теперь должен читать их из /run/secrets/<ИМЯ_ПЕРЕМЕННОЙ>.
+    secrets:
+      - source: REDIS_HOST
+        target: REDIS_HOST
+      - source: BOT_TOKEN
+        target: BOT_TOKEN
+      - source: PVE_HOST
+        target: PVE_HOST
+      - source: PVE_PORT
+        target: PVE_PORT
+      - source: PVE_NODE
+        target: PVE_NODE
+      - source: PVE_TOKEN
+        target: PVE_TOKEN
+      - source: CF_TOKEN
+        target: CF_TOKEN
+      - source: DOMAIN
+        target: DOMAIN
+      - source: ADMIN_IDS
+        target: ADMIN_IDS
+      - source: DEFAULT_GW
+        target: DEFAULT_GW
+      - source: DEFAULT_DNS
+        target: DEFAULT_DNS
+      - source: IP_RANGE_START
+        target: IP_RANGE_START
+      - source: IP_RANGE_END
+        target: IP_RANGE_END
+      - source: DEFAULT_VM_USER
+        target: DEFAULT_VM_USER
+      - source: VPS_HOST
+        target: VPS_HOST
+      - source: VPS_USER
+        target: VPS_USER
+      - source: VPS_PASS
+        target: VPS_PASS
+
+    volumes:
+      # Важно: монтирование каталогов должно быть абсолютными путями в Swarm
+      - /home/github/data/vivaldi_bot.db:/app/core/vivaldi_bot.db
+      - /home/github/log:/app/log
+
+    working_dir: /app
+    networks:
+      - proxmox_net
+
+  redis:
+    image: redis:8.0-M03-alpine
+    logging:
+      driver: "json-file"
+      options:
+        tag: "{{.Name}}"
+    container_name: redis # Swarm игнорирует container_name, но оставим для локального запуска
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - proxmox_net
+
+volumes:
+  redis-data:
+
+networks:
+  proxmox_net:
+    driver: overlay # Используем overlay для Swarm, bridge — для локального
+
+# Объявление всех секретов, которые будут созданы GitHub Actions (они внешние для файла)
+secrets:
+  REDIS_HOST:
+    external: true
+  BOT_TOKEN:
+    external: true
+  PVE_HOST:
+    external: true
+  PVE_PORT:
+    external: true
+  PVE_NODE:
+    external: true
+  PVE_TOKEN:
+    external: true
+  CF_TOKEN:
+    external: true
+  DOMAIN:
+    external: true
+  ADMIN_IDS:
+    external: true
+  DEFAULT_GW:
+    external: true
+  DEFAULT_DNS:
+    external: true
+  IP_RANGE_START:
+    external: true
+  IP_RANGE_END:
+    external: true
+  DEFAULT_VM_USER:
+    external: true
+  VPS_HOST:
+    external: true
+  VPS_USER:
+    external: true
+  VPS_PASS:
+    external: true
