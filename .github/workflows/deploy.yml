@@ -58,7 +58,16 @@ jobs:
           update_secret DEFAULT_DNS     "${{ vars.DEFAULT_DNS }}"
           update_secret IP_RANGE_START  "${{ vars.IP_RANGE_START }}"
           update_secret IP_RANGE_END    "${{ vars.IP_RANGE_END }}"
+          
 
+      ######################################################################
+      # (1.5) Остановка и удаление стека для возможности обновления секретов
+      ######################################################################
+      - name: Stop and remove existing stack
+        run: |
+          echo "[SWARM] Removing old stack to free up secrets..."
+          docker stack rm proxmoxbot || true
+          sleep 5
       ######################################################################
       # (2) ДЕПЛОЙ стекa через docker stack
       ######################################################################
