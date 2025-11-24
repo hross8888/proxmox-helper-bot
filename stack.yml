@@ -62,7 +62,7 @@ services:
       - proxmox_net
 
   redis:
-    image: redis:8.0-M03-alpine
+    image: redis:7.4-alpine
     logging:
       driver: "json-file"
       options:
