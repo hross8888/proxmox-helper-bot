@@ -8,14 +8,12 @@ services:
       dockerfile: Dockerfile
     container_name: proxmox-helper-bot
     command: python main.py
-    # Секция deploy: обеспечивает управление сервисом в Swarm Mode
     deploy:
       replicas: 1
       restart_policy:
         condition: any
 
-    # Большинство переменных перемещено в secrets для безопасности.
-    # Ваш Python-код теперь должен читать их из /run/secrets/<ИМЯ_ПЕРЕМЕННОЙ>.
+
     secrets:
       - source: REDIS_HOST
         target: REDIS_HOST
@@ -53,7 +51,6 @@ services:
         target: VPS_PASS
 
     volumes:
-      # Важно: монтирование каталогов должно быть абсолютными путями в Swarm
       - /home/github/data/vivaldi_bot.db:/app/core/vivaldi_bot.db
       - /home/github/log:/app/log
 
@@ -67,7 +64,7 @@ services:
       driver: "json-file"
       options:
         tag: "{{.Name}}"
-    container_name: redis # Swarm игнорирует container_name, но оставим для локального запуска
+    container_name: redis
     deploy:
       replicas: 1
       restart_policy:
@@ -87,9 +84,8 @@ volumes:
 
 networks:
   proxmox_net:
-    driver: overlay # Используем overlay для Swarm, bridge — для локального
+    driver: overlay
 
-# Объявление всех секретов, которые будут созданы GitHub Actions (они внешние для файла)
 secrets:
   REDIS_HOST:
     external: true
