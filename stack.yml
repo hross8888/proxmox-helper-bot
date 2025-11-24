@@ -6,7 +6,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: proxmox-helper-bot
     command: python main.py
     # Секция deploy: обеспечивает управление сервисом в Swarm Mode
     deploy:
